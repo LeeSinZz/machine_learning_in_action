@@ -32,7 +32,7 @@ def create_c1(data_set):
             if [item] not in candidates_1:
                 candidates_1.append([item])
         candidates_1.sort()
-    return list(map(set, candidates_1))
+    return list(map(frozenset, candidates_1))
 
 
 def scan_data_set(data_set, candidates_k, min_support_rate):
@@ -89,6 +89,37 @@ def apriori(data_set, min_support_rate=0.5):
         L.append(Lk)
         k += 1
     return L, support_rate_data
+
+
+def rule_from_collection(collection, H, support_rate_data, big_rule_list, min_confidence_value):
+    m = len(H[0])
+    if len(collection) > (m + 1):
+        Hmp1 = apriori(H, m+1)
+        Hmp1 = calculate_config(collection, Hmp1, support_rate_data, min_confidence_value)
+        if len(Hmp1) > 1:
+            rule_from_collection(collection, Hmp1, support_rate_data, min_confidence_value)
+
+
+def calculate_config(collection, H, support_rate_data, min_confidence_value):
+    pruned_h = []
+    for conseq in H:
+        conf = support_rate_data[collection] / support_rate_data[collection - conseq]
+        if conf >= min_confidence_value:
+            support_rate_data.append((collection-conseq), '-->', conseq, 'conf:', conf)
+            pruned_h.append(conseq)
+    return pruned_h
+
+
+def generate_rules(L, support_rate_data, min_confidence_value):
+    big_rule_list = []
+    for i in range(1, len(L)):
+        for collection in L[i]:
+            H1 = [frozenset([item]) for item in frozenset]
+            if i > 1:
+                rule_from_collection(collection, H1, support_rate_data, big_rule_list, min_confidence_value)
+            else:
+                calculate_config(collection, H1, support_rate_data, min_confidence_value)
+    return big_rule_list
 
 
 if __name__ == '__main__':
